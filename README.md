@@ -1,0 +1,4 @@
+# -Early-Corrosion-detection-in-Carbon-steel-using-AI-Model-
+
+Early Corrosion Detection in Carbon Steel using AI
+This project focuses on the early detection of corrosion in carbon steel using an AI-based decision model combined with real-time sensor data. An ultrasonic sensor continuously moves up and down to measure surface distance variations; any sudden increase or decrease in distance indicates the presence of cracks, pits, or surface wounds caused by early corrosion. A temperature sensor monitors environmental conditions that accelerate corrosion, while an MQ-11 gas sensor detects hydrogen gas released during corrosion reactions in carbon steel. The collected sensor data is processed and analyzed using an AI model to classify corrosion risk at an early stage, enabling timely preventive maintenance before severe structural damage occurs.
