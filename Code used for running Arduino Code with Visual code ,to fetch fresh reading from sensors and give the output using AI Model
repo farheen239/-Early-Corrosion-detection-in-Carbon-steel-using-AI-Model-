@@ -1,0 +1,59 @@
+import serial, time
+import numpy as np
+import cv2
+from tensorflow.keras.models import load_model
+
+# -------- LOAD AI MODEL --------
+model = load_model("corrosion_model.h5")
+IMG_SIZE = 128
+
+# -------- SERIAL SETUP --------
+PORT = "COM3"     # change this
+BAUD = 9600
+arduino = serial.Serial(PORT, BAUD, timeout=1)
+time.sleep(2)
+
+print("✅ AI Corrosion Monitoring Started...\n")
+
+# -------- CAMERA SETUP --------
+cap = cv2.VideoCapture(0)
+
+def preprocess(img):
+    img = cv2.resize(img,(IMG_SIZE,IMG_SIZE))
+    img = img/255.0
+    return np.reshape(img,(1,IMG_SIZE,IMG_SIZE,3))
+
+# -------- MAIN LOOP --------
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        print("Camera error")
+        break
+
+    _, corrosion_img = cv2.threshold(
+        cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY),
+        120,255,cv2.THRESH_BINARY)
+
+    img = preprocess(frame)
+    prediction = model.predict(img)[0][0]
+
+    line = arduino.readline().decode().strip()
+
+    if prediction > 0.6:
+        status = "⚠ CORROSION DETECTED"
+    else:
+        status = "✅ NO CORROSION"
+
+    if line:
+        print("Arduino:", line)
+        print("AI Status:", status, "| Confidence:", round(float(prediction),2), "\n")
+
+    color = (0,0,255) if prediction > 0.6 else (0,255,0)
+    cv2.putText(frame, status, (20,40), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+    cv2.imshow("AI Corrosion Detection", frame)
+
+    if cv2.waitKey(1) == 27:
+        break
+
+cap.release()
+cv2.destroyAllWindows()
