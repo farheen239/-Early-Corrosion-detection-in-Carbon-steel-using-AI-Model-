@@ -1,0 +1,87 @@
+#include <DHT.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// -------- Pin Config --------
+#define DHTPIN 2
+#define DHTTYPE DHT11      // or DHT22
+#define CORROSION_PIN A0
+#define BUZZER 8
+#define LED 9
+
+// -------- Objects --------
+DHT dht(DHTPIN, DHTTYPE);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// -------- Thresholds --------
+int corrosionThreshold = 500;   // adjust after testing
+int humidityLimit = 70;         // % RH
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(CORROSION_PIN, INPUT);
+  pinMode(BUZZER, OUTPUT);
+  pinMode(LED, OUTPUT);
+
+  dht.begin();
+  lcd.init();
+  lcd.backlight();
+
+  lcd.setCursor(0,0);
+  lcd.print("Corrosion Sys");
+  lcd.setCursor(0,1);
+  lcd.print("Initializing");
+  delay(2000);
+  lcd.clear();
+}
+
+void loop() {
+
+  int corrosionValue = analogRead(CORROSION_PIN);
+  float humidity = dht.readHumidity();
+  float temperature = dht.readTemperature();
+
+  if (isnan(humidity) || isnan(temperature)) {
+    Serial.println("DHT Error");
+    return;
+  }
+
+  // Display
+  lcd.setCursor(0,0);
+  lcd.print("H:");
+  lcd.print(humidity);
+  lcd.print("% ");
+
+  lcd.print("C:");
+  lcd.print(corrosionValue);
+
+  lcd.setCursor(0,1);
+  lcd.print("T:");
+  lcd.print(temperature);
+  lcd.print("C ");
+
+  // Decision Logic
+  if (corrosionValue > corrosionThreshold || humidity > humidityLimit) {
+    digitalWrite(LED, HIGH);
+    digitalWrite(BUZZER, HIGH);
+
+    Serial.println("⚠ Corrosion Risk Detected!");
+  } 
+  else {
+    digitalWrite(LED, LOW);
+    digitalWrite(BUZZER, LOW);
+    Serial.println("System Normal");
+  }
+
+  // Serial Monitor Output
+  Serial.print("Corrosion Sensor: ");
+  Serial.print(corrosionValue);
+  Serial.print(" | Humidity: ");
+  Serial.print(humidity);
+  Serial.print("% | Temp: ");
+  Serial.print(temperature);
+  Serial.println(" C");
+
+  delay(2000);
+}
